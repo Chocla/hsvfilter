@@ -10,6 +10,7 @@ class Window(QMainWindow):
     rBound = np.array([255,255,255])
     def __init__(self):
         QMainWindow.__init__(self)
+        #Initialize Filter Range Arrays
         self.lBound = np.array([0,0,0])
         self.rBound = np.array([255,255,255])
 
@@ -21,19 +22,20 @@ class Window(QMainWindow):
 
         gridLayout = QGridLayout(self)
         c.setLayout(gridLayout)
-        title = QLabel("Hello World ",self)
+        title = QLabel("Video",self)
         title.setAlignment(QtCore.Qt.AlignCenter)
-        gridLayout.addWidget(title,0,0)
+        gridLayout.addWidget(title,0,0,4,4)
 
+        #Initialize Range Sliders
         self.slider1 = QRangeSlider()
         self.slider1.setFixedHeight(15)
         self.slider2 = QRangeSlider()
         self.slider2.setFixedHeight(15)
         self.slider3 = QRangeSlider()
         self.slider3.setFixedHeight(15)
-        gridLayout.addLayout(self.setupSlider(self.slider1, QLabel("Hue"),self.updateRange),1,0)
-        gridLayout.addLayout(self.setupSlider(self.slider2, QLabel("Saturation"),self.updateRange),1,1)
-        gridLayout.addLayout(self.setupSlider(self.slider3, QLabel("Value"),self.updateRange),1,2)
+        gridLayout.addLayout(self.setupSlider(self.slider1, QLabel("Hue"),self.updateRange),5,0)
+        gridLayout.addLayout(self.setupSlider(self.slider2, QLabel("Saturation"),self.updateRange),5,1)
+        gridLayout.addLayout(self.setupSlider(self.slider3, QLabel("Value"),self.updateRange),5,2)
 
     def setupSlider(self,slider, label,slot):
         slider.setMin(0)
@@ -52,13 +54,3 @@ class Window(QMainWindow):
         self.lBound[1],self.rBound[1] = self.slider2.getRange()
         self.lBound[2],self.rBound[2] = self.slider3.getRange()
         print(self.lBound,self.rBound)
-
-    # def hueChanged(self):
-    #     self.lBound[0],self.rBound[0] = self.slider1.getRange()
-    #     print(self.lBound,self.rBound)
-    # def satChanged(self):
-    #     self.lBound[1],self.rBound[1] = self.slider2.getRange()
-    #     print(self.lBound,self.rBound)
-    # def valChanged(self):
-    #     self.lBound[2],self.rBound[2] = self.slider3.getRange()
-    #     print(self.lBound,self.rBound)
