@@ -11,7 +11,6 @@ if __name__ == "__main__":
     # cap = cv2.VideoCapture(0)
 
     # while True:
-    #     #TODO: Put video frame into gui
     #     _, frame = cap.read()
     #     hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
 

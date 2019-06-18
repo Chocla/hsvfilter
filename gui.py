@@ -6,6 +6,7 @@ from PyQt5.QtGui import QPixmap,QImage
 from qrangeslider import QRangeSlider
 import numpy as np
 import cv2
+#TODO: cleanup unneeded imports
 
 class vidThread(QThread):
     changePixmap = QtCore.pyqtSignal(QImage)
@@ -30,9 +31,8 @@ class vidThread(QThread):
                 h, w, ch = res.shape
                 bytesPerLine = ch * w
 
-                #FIXME: Something about the colors gets messed up when converting the image to a QImage
-                convertedToRGB = cv2.cvtColor(res,cv2.COLOR_HSV2RGB)
-                converted = QImage(res.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
+                convertedToRGB = cv2.cvtColor(res,cv2.COLOR_BGR2RGB)
+                converted = QImage(convertedToRGB.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
                 
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
