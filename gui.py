@@ -1,13 +1,49 @@
 import sys
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets,QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget,QSlider
-from PyQt5.QtCore import QSize, QObject
+from PyQt5.QtCore import QSize, QObject,QThread,pyqtSlot
+from PyQt5.QtGui import QPixmap,QImage
 from qrangeslider import QRangeSlider
 import numpy as np
+import cv2
+
+class vidThread(QThread):
+    changePixmap = QtCore.pyqtSignal(QImage)
+    lBound = np.array([0,0,0])
+    rBound = np.array([255,255,255])
+    
+    @pyqtSlot(np.ndarray,np.ndarray)
+    def updateSliders(self,a,b):
+        self.lBound = a
+        self.rBound = b
+        print(self.lBound,self.rBound)
+
+    def run(self):
+        cap = cv2.VideoCapture(0)
+        while True:
+            ret,frame = cap.read()
+            hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+            if ret:
+                mask = cv2.inRange(hsv, self.lBound, self.rBound)
+                
+                res = cv2.bitwise_and(frame,frame,mask=mask)
+                h, w, ch = res.shape
+                bytesPerLine = ch * w
+
+                #FIXME: Something about the colors gets messed up when converting the image to a QImage
+                convertedToRGB = cv2.cvtColor(res,cv2.COLOR_HSV2RGB)
+                converted = QImage(res.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
+                
+                final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
+
+                self.changePixmap.emit(final)
+                # cv2.imshow('res',res)
+
 
 class Window(QMainWindow):
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
+    slidersChanged = QtCore.pyqtSignal(np.ndarray,np.ndarray)
     def __init__(self):
         QMainWindow.__init__(self)
         #Initialize Filter Range Arrays
@@ -22,9 +58,14 @@ class Window(QMainWindow):
 
         gridLayout = QGridLayout(self)
         c.setLayout(gridLayout)
-        title = QLabel("Video",self)
-        title.setAlignment(QtCore.Qt.AlignCenter)
-        gridLayout.addWidget(title,0,0,4,4)
+        self.frame = QLabel(self)
+        self.frame.resize(640, 480)
+        gridLayout.addWidget(self.frame,0,0,4,4)
+
+        self.th = vidThread()
+        self.th.changePixmap.connect(self.setImage)
+        self.slidersChanged.connect(self.th.updateSliders)
+        self.th.start()
 
         #Initialize Range Sliders
         self.slider1 = QRangeSlider()
@@ -49,8 +90,13 @@ class Window(QMainWindow):
         return tmp
 
     #TODO: Change updateRange to only update the slider that is being changed instead of all of them.
+    #TODO: Don't store range arrays in both the Window and vidThread
     def updateRange(self):
         self.lBound[0],self.rBound[0] = self.slider1.getRange()
         self.lBound[1],self.rBound[1] = self.slider2.getRange()
         self.lBound[2],self.rBound[2] = self.slider3.getRange()
-        print(self.lBound,self.rBound)
+        self.slidersChanged.emit(self.lBound,self.rBound)
+
+    @pyqtSlot(QImage)
+    def setImage(self, image):
+        self.frame.setPixmap(QPixmap.fromImage(image))
