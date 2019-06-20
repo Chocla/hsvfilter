@@ -6,6 +6,8 @@ from PyQt5.QtGui import QPixmap,QImage
 from qrangeslider import QRangeSlider
 import numpy as np
 import cv2
+import json
+
 #TODO: cleanup unneeded imports
 
 class vidThread(QThread):
@@ -132,10 +134,34 @@ class Window(QMainWindow):
     #     if fileName:
     #         print(fileName)
 
-    #TODO: Import a json file to range values
     #TODO: Update Sliders to proper values
     def importRanges(self):
-        pass
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, tmp = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;JSON Files (*.json)", options=options)
+        if filename != "":
+            f = open(filename,'r')
+            data = json.load(f)
+        else:
+            return
+
+        try:
+            self.lBound[0] = data['lower']['h']
+            self.lBound[1] = data['lower']['s']
+            self.lBound[2] = data['lower']['v']
+            self.rBound[0] = data['upper']['h']
+            self.rBound[1] = data['upper']['s']
+            self.rBound[2] = data['upper']['v']
+            # self.lBound = np.array([int(x) for x in data['lower']])
+            # self.rBound = np.array([int(x) for x in data['upper']])
+            self.slidersChanged.emit(self.lBound,self.rBound)
+
+            # self.slider1.setRange(self.lBound[0],self.rBound[0])
+            # self.slider2.setRange(self.lBound[1],self.rBound[1])
+            # self.slider3.setRange(self.lBound[2],self.rBound[2])    
+        except:
+            print("Error Parsing JSON File, Values not imported")
+
 
     #TODO: parse current settings into a json file
     #TODO: prompt user to save that file as whatever
