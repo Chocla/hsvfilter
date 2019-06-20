@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtCore, QtWidgets,QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget,QSlider
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget,QSlider,QFileDialog,QAction
 from PyQt5.QtCore import QSize, QObject,QThread,pyqtSlot
 from PyQt5.QtGui import QPixmap,QImage
 from qrangeslider import QRangeSlider
@@ -39,7 +39,8 @@ class vidThread(QThread):
                 self.changePixmap.emit(final)
                 # cv2.imshow('res',res)
 
-
+#TODO: Implement a save/import for initial range state.
+#TODO: Add more documentation
 class Window(QMainWindow):
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
@@ -55,6 +56,19 @@ class Window(QMainWindow):
         
         c = QWidget(self)
         self.setCentralWidget(c)
+
+        mainMenu = self.menuBar()
+        fileMenu = mainMenu.addMenu("&File")
+
+        importAction = QAction("&Import Settings",self)
+        importAction.setStatusTip("Import HSV Tolerances")
+        importAction.triggered.connect(self.importRanges)
+        exportAction = QAction("&Export Settings",self)
+        exportAction.setStatusTip("Export Current Tolerances")
+        exportAction.triggered.connect(self.exportRanges)
+
+        fileMenu.addAction(importAction)
+        fileMenu.addAction(exportAction)
 
         gridLayout = QGridLayout(self)
         c.setLayout(gridLayout)
@@ -100,3 +114,33 @@ class Window(QMainWindow):
     @pyqtSlot(QImage)
     def setImage(self, image):
         self.frame.setPixmap(QPixmap.fromImage(image))
+
+
+    #Sample Open/Save Code
+
+    # def openFileNameDialog(self):
+    #     options = QFileDialog.Options()
+    #     options |= QFileDialog.DontUseNativeDialog
+    #     fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+    #     if fileName:
+    #         print(fileName)
+
+    # def saveFileDialog(self):
+    #     options = QFileDialog.Options()
+    #     options |= QFileDialog.DontUseNativeDialog
+    #     fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.txt)", options=options)
+    #     if fileName:
+    #         print(fileName)
+
+    #TODO: Import a json file to range values
+    #TODO: Update Sliders to proper values
+    def importRanges(self):
+        pass
+
+    #TODO: parse current settings into a json file
+    #TODO: prompt user to save that file as whatever
+    def exportRanges(self):
+        pass
+
+    def testFunc(self):
+        print("test!")
