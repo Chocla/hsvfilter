@@ -188,7 +188,6 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
         self.setStart(0)
         self.setEnd(99)
         self.setDrawValues(True)
-
     def min(self):
         return getattr(self, '__min', None)
 

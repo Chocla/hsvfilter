@@ -39,14 +39,13 @@ class vidThread(QThread):
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
-                # cv2.imshow('res',res)
 
-#TODO: Implement a save/import for initial range state.
 #TODO: Add more documentation
 class Window(QMainWindow):
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
     slidersChanged = QtCore.pyqtSignal(np.ndarray,np.ndarray)
+
     def __init__(self):
         QMainWindow.__init__(self)
         #Initialize Filter Range Arrays
@@ -105,8 +104,6 @@ class Window(QMainWindow):
         tmp.addWidget(slider,1,0)
         return tmp
 
-    #TODO: Change updateRange to only update the slider that is being changed instead of all of them.
-    #TODO: Don't store range arrays in both the Window and vidThread
     def updateRange(self):
         self.lBound[0],self.rBound[0] = self.slider1.getRange()
         self.lBound[1],self.rBound[1] = self.slider2.getRange()
@@ -116,23 +113,6 @@ class Window(QMainWindow):
     @pyqtSlot(QImage)
     def setImage(self, image):
         self.frame.setPixmap(QPixmap.fromImage(image))
-
-
-    #Sample Open/Save Code
-
-    # def openFileNameDialog(self):
-    #     options = QFileDialog.Options()
-    #     options |= QFileDialog.DontUseNativeDialog
-    #     fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
-    #     if fileName:
-    #         print(fileName)
-
-    # def saveFileDialog(self):
-    #     options = QFileDialog.Options()
-    #     options |= QFileDialog.DontUseNativeDialog
-    #     fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.txt)", options=options)
-    #     if fileName:
-    #         print(fileName)
 
     #TODO: Update Sliders to proper values
     def importRanges(self):
@@ -162,11 +142,15 @@ class Window(QMainWindow):
         except:
             print("Error Parsing JSON File, Values not imported")
 
-
-    #TODO: parse current settings into a json file
-    #TODO: prompt user to save that file as whatever
     def exportRanges(self):
-        pass
-
-    def testFunc(self):
-        print("test!")
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()","","All Files (*);;JSON Files (*.json)", options=options)
+        if fileName != "":
+            f = open(fileName,'w')
+        l1,l2,l3 = self.lBound
+        r1,r2,r3 = self.rBound
+        print(l1,l2,l3,self.lBound)
+        jString = "{{\"lower\": {{\"h\": \"{}\", \"s\": \"{}\", \"v\": \"{}\"}}, \"upper\": {{\"h\": \"{}\", \"s\": \"{}\", \"v\": \"{}\" }}}}".format(l1,l2,l3,r1,r2,r3)
+        f.write(jString)
+  
