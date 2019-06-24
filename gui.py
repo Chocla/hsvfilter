@@ -1,19 +1,15 @@
-import sys
-from PyQt5 import QtCore, QtWidgets,QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget,QSlider,QFileDialog,QAction
-from PyQt5.QtCore import QSize, QObject,QThread,pyqtSlot
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget,QFileDialog,QAction
+from PyQt5.QtCore import QSize, QThread,pyqtSlot
 from PyQt5.QtGui import QPixmap,QImage
 from qrangeslider import QRangeSlider
 import numpy as np
 import cv2
 import json
 
-#TODO: cleanup unneeded imports
-
 class vidThread(QThread):
     changePixmap = QtCore.pyqtSignal(QImage)
 
-    # def __init__(self):
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
     
@@ -74,7 +70,6 @@ class Window(QMainWindow):
 
         self.th = vidThread()
         self.th.changePixmap.connect(self.setImage)
-        # self.slidersChanged.connect(self.th.updateSliders)
         self.th.start()
 
         #Initialize Range Sliders
@@ -105,7 +100,6 @@ class Window(QMainWindow):
     def setImage(self, image):
         self.frame.setPixmap(QPixmap.fromImage(image))
 
-    #TODO: Update Sliders to proper values
     def importRanges(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -115,7 +109,7 @@ class Window(QMainWindow):
             data = json.load(f)
         else:
             return
-        # print(data)
+
         try:
             self.slider1.setRange(int(data['lower']['h']),int(data['upper']['h']))
             self.slider2.setRange(int(data['lower']['s']),int(data['upper']['s']))
