@@ -21,6 +21,7 @@ class vidThread(QThread):
     def updateRange(self,n):
         sliderID = self.sender().ID
         self.lBound[sliderID],self.rBound[sliderID] = self.sender().getRange()
+        print("Thread:", self.lBound,self.rBound)
 
     def run(self):
         cap = cv2.VideoCapture(0)
@@ -41,19 +42,10 @@ class vidThread(QThread):
 
                 self.changePixmap.emit(final)
 
-
-#TODO: Rethink how the range data is getting sent back and forth between the window and the thread
-
 #TODO: Add more documentation
 class Window(QMainWindow):
-    # lBound = np.array([0,0,0])
-    # rBound = np.array([255,255,255])
-
     def __init__(self):
         QMainWindow.__init__(self)
-        #Initialize Filter Range Arrays
-        # self.lBound = np.array([0,0,0])
-        # self.rBound = np.array([255,255,255])
 
         self.setMinimumSize(QSize(640,480))
         self.setWindowTitle("Test")
@@ -109,12 +101,6 @@ class Window(QMainWindow):
         tmp.addWidget(slider,1,0)
         return tmp
 
-    # def updateRange(self):
-    #     self.lBound[0],self.rBound[0] = self.slider1.getRange()
-    #     self.lBound[1],self.rBound[1] = self.slider2.getRange()
-    #     self.lBound[2],self.rBound[2] = self.slider3.getRange()
-    #     self.slidersChanged.emit(self.lBound,self.rBound)
-
     @pyqtSlot(QImage)
     def setImage(self, image):
         self.frame.setPixmap(QPixmap.fromImage(image))
@@ -129,24 +115,11 @@ class Window(QMainWindow):
             data = json.load(f)
         else:
             return
-
+        # print(data)
         try:
-            self.lBound[0] = data['lower']['h']
-            self.lBound[1] = data['lower']['s']
-            self.lBound[2] = data['lower']['v']
-            self.rBound[0] = data['upper']['h']
-            self.rBound[1] = data['upper']['s']
-            self.rBound[2] = data['upper']['v']
-
-            print("Import Print 0", self.lBound,self.rBound)
-            self.slidersChanged.emit(self.lBound,self.rBound)
-            self.slider1.setRange(self.lBound[0],self.rBound[0])
-            self.slider2.setRange(self.lBound[1],self.rBound[1])
-            self.slider3.setRange(self.lBound[2],self.rBound[2])  
-            self.slider1.drawValues()
-            self.slider2.drawValues()
-            self.slider3.drawValues()
-            print("Import Print 1", self.lBound,self.rBound)
+            self.slider1.setRange(int(data['lower']['h']),int(data['upper']['h']))
+            self.slider2.setRange(int(data['lower']['s']),int(data['upper']['s']))
+            self.slider3.setRange(int(data['lower']['v']),int(data['upper']['v']))
         except:
             print("Error Parsing JSON File, Values not imported")
 
@@ -156,9 +129,9 @@ class Window(QMainWindow):
         fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()","","All Files (*);;JSON Files (*.json)", options=options)
         if fileName != "":
             f = open(fileName,'w')
-        l1,l2,l3 = self.lBound
-        r1,r2,r3 = self.rBound
-        print(l1,l2,l3,self.lBound)
+        l1,l2,l3 = self.th.lBound
+        r1,r2,r3 = self.th.rBound
+
         jString = "{{\"lower\": {{\"h\": \"{}\", \"s\": \"{}\", \"v\": \"{}\"}}, \"upper\": {{\"h\": \"{}\", \"s\": \"{}\", \"v\": \"{}\" }}}}".format(l1,l2,l3,r1,r2,r3)
         f.write(jString)
   
