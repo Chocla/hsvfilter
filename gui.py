@@ -12,14 +12,15 @@ import json
 
 class vidThread(QThread):
     changePixmap = QtCore.pyqtSignal(QImage)
+
+    # def __init__(self):
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
     
-    @pyqtSlot(np.ndarray,np.ndarray)
-    def updateSliders(self,a,b):
-        self.lBound = a
-        self.rBound = b
-        print(self.lBound,self.rBound)
+    @pyqtSlot(int)
+    def updateRange(self,n):
+        sliderID = self.sender().ID
+        self.lBound[sliderID],self.rBound[sliderID] = self.sender().getRange()
 
     def run(self):
         cap = cv2.VideoCapture(0)
@@ -40,17 +41,19 @@ class vidThread(QThread):
 
                 self.changePixmap.emit(final)
 
+
+#TODO: Rethink how the range data is getting sent back and forth between the window and the thread
+
 #TODO: Add more documentation
 class Window(QMainWindow):
-    lBound = np.array([0,0,0])
-    rBound = np.array([255,255,255])
-    slidersChanged = QtCore.pyqtSignal(np.ndarray,np.ndarray)
+    # lBound = np.array([0,0,0])
+    # rBound = np.array([255,255,255])
 
     def __init__(self):
         QMainWindow.__init__(self)
         #Initialize Filter Range Arrays
-        self.lBound = np.array([0,0,0])
-        self.rBound = np.array([255,255,255])
+        # self.lBound = np.array([0,0,0])
+        # self.rBound = np.array([255,255,255])
 
         self.setMinimumSize(QSize(640,480))
         self.setWindowTitle("Test")
@@ -79,19 +82,20 @@ class Window(QMainWindow):
 
         self.th = vidThread()
         self.th.changePixmap.connect(self.setImage)
-        self.slidersChanged.connect(self.th.updateSliders)
+        # self.slidersChanged.connect(self.th.updateSliders)
         self.th.start()
 
         #Initialize Range Sliders
         self.slider1 = QRangeSlider()
         self.slider1.setFixedHeight(15)
-        self.slider2 = QRangeSlider()
+        self.slider2 = QRangeSlider(None,1)
         self.slider2.setFixedHeight(15)
-        self.slider3 = QRangeSlider()
+        self.slider3 = QRangeSlider(None,2)
         self.slider3.setFixedHeight(15)
-        gridLayout.addLayout(self.setupSlider(self.slider1, QLabel("Hue"),self.updateRange),5,0)
-        gridLayout.addLayout(self.setupSlider(self.slider2, QLabel("Saturation"),self.updateRange),5,1)
-        gridLayout.addLayout(self.setupSlider(self.slider3, QLabel("Value"),self.updateRange),5,2)
+        gridLayout.addLayout(self.setupSlider(self.slider1, QLabel("Hue"),self.th.updateRange),5,0)
+        gridLayout.addLayout(self.setupSlider(self.slider2, QLabel("Saturation"),self.th.updateRange),5,1)
+        gridLayout.addLayout(self.setupSlider(self.slider3, QLabel("Value"),self.th.updateRange),5,2)
+        self.slider1.drawValues()
 
     def setupSlider(self,slider, label,slot):
         slider.setMin(0)
@@ -99,16 +103,17 @@ class Window(QMainWindow):
         slider.setEnd(255)
         slider.startValueChanged.connect(slot)
         slider.endValueChanged.connect(slot)
+        
         tmp = QGridLayout(self)
         tmp.addWidget(label,0,0)
         tmp.addWidget(slider,1,0)
         return tmp
 
-    def updateRange(self):
-        self.lBound[0],self.rBound[0] = self.slider1.getRange()
-        self.lBound[1],self.rBound[1] = self.slider2.getRange()
-        self.lBound[2],self.rBound[2] = self.slider3.getRange()
-        self.slidersChanged.emit(self.lBound,self.rBound)
+    # def updateRange(self):
+    #     self.lBound[0],self.rBound[0] = self.slider1.getRange()
+    #     self.lBound[1],self.rBound[1] = self.slider2.getRange()
+    #     self.lBound[2],self.rBound[2] = self.slider3.getRange()
+    #     self.slidersChanged.emit(self.lBound,self.rBound)
 
     @pyqtSlot(QImage)
     def setImage(self, image):
@@ -132,13 +137,16 @@ class Window(QMainWindow):
             self.rBound[0] = data['upper']['h']
             self.rBound[1] = data['upper']['s']
             self.rBound[2] = data['upper']['v']
-            # self.lBound = np.array([int(x) for x in data['lower']])
-            # self.rBound = np.array([int(x) for x in data['upper']])
-            self.slidersChanged.emit(self.lBound,self.rBound)
 
-            # self.slider1.setRange(self.lBound[0],self.rBound[0])
-            # self.slider2.setRange(self.lBound[1],self.rBound[1])
-            # self.slider3.setRange(self.lBound[2],self.rBound[2])    
+            print("Import Print 0", self.lBound,self.rBound)
+            self.slidersChanged.emit(self.lBound,self.rBound)
+            self.slider1.setRange(self.lBound[0],self.rBound[0])
+            self.slider2.setRange(self.lBound[1],self.rBound[1])
+            self.slider3.setRange(self.lBound[2],self.rBound[2])  
+            self.slider1.drawValues()
+            self.slider2.drawValues()
+            self.slider3.drawValues()
+            print("Import Print 1", self.lBound,self.rBound)
         except:
             print("Error Parsing JSON File, Values not imported")
 

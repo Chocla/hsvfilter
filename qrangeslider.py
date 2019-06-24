@@ -159,7 +159,7 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
     _SPLIT_START = 1
     _SPLIT_END = 2
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None,ID = 0):
         super(QRangeSlider, self).__init__(parent)
         self.setupUi(self)
         self.setMouseTracking(False)
@@ -188,6 +188,7 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
         self.setStart(0)
         self.setEnd(99)
         self.setDrawValues(True)
+        self.ID = ID
     def min(self):
         return getattr(self, '__min', None)
 
