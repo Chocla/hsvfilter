@@ -7,6 +7,8 @@ import numpy as np
 import cv2
 import json
 
+#TODO: Add color filter object detection
+#TODO: Draw a box around detected object
 class vidThread(QThread):
     changePixmap = QtCore.pyqtSignal(QImage)
 
@@ -17,7 +19,7 @@ class vidThread(QThread):
     def updateRange(self,n):
         sliderID = self.sender().ID
         self.lBound[sliderID],self.rBound[sliderID] = self.sender().getRange()
-        print("Thread:", self.lBound,self.rBound)
+        print("Range:", self.lBound,self.rBound)
 
     def run(self):
         cap = cv2.VideoCapture(0)
@@ -48,7 +50,7 @@ class Window(QMainWindow):
         
         c = QWidget(self)
         self.setCentralWidget(c)
-
+        #TODO: Add a Menu that allows user to select from certain preset filters (commonly used)
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu("&File")
 
