@@ -22,6 +22,7 @@ class vidThread(QThread):
         print("Range:", self.lBound,self.rBound)
 
     def run(self):
+        flag = True
         cap = cv2.VideoCapture(0)
         while True:
             ret,frame = cap.read()
@@ -30,6 +31,9 @@ class vidThread(QThread):
                 mask = cv2.inRange(hsv, self.lBound, self.rBound)
                 
                 res = cv2.bitwise_and(frame,frame,mask=mask)
+
+
+                #cv2.rectangle(res, (50,50),(100,100), (255,0,0), 2)
                 h, w, ch = res.shape
                 bytesPerLine = ch * w
 
@@ -39,6 +43,29 @@ class vidThread(QThread):
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
+    #Return (x1,y1) (x2,y2) coordinates corresponding to the boundaries of the object
+    def findBoundaries(self,image):
+        h,w, ch = image.shape
+        x1,y1 = h,w
+        for i in np.arange(h, 0, -1):
+            print(image[0][i])
+            for j in np.arange(w,0, -1):
+                if j < x1 and i < y1 and image[j,i].all() != np.array([0,0,0]).all():
+                    x1,y1, = j,i
+        print(x1,y1)
+
+        #First idea:
+        #find the minimum x and y val that aren't black
+        #find the maximum x and y val that aren't black
+        #use those as coords
+        #Downsides:
+        #doesn't take into account connectedness of pixels that correspond to an object
+        #so 1 stray pixel screws up the box boundaries significantly
+        #Somehow, I need to capture the idea of a region, regression?
+
+        #Second Idea:
+        #Just use an opencv function lole cv2.contour seems to be a good choice.
+        pass
 
 #TODO: Add more documentation
 class Window(QMainWindow):
