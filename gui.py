@@ -29,43 +29,44 @@ class vidThread(QThread):
             hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
             if ret:
                 mask = cv2.inRange(hsv, self.lBound, self.rBound)
+                contours, h = cv2.findContours(mask, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                 
                 res = cv2.bitwise_and(frame,frame,mask=mask)
-
+                if len(contours) != 0:
+                    maxContour = self.findBiggestContour(contours)
+                    rx,ry,rw,rh = cv2.boundingRect(maxContour)
+                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(255,0,0))
 
                 #cv2.rectangle(res, (50,50),(100,100), (255,0,0), 2)
                 h, w, ch = res.shape
                 bytesPerLine = ch * w
 
-                convertedToRGB = cv2.cvtColor(res,cv2.COLOR_BGR2RGB)
+                convertedToRGB = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
                 converted = QImage(convertedToRGB.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
                 
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
-    #Return (x1,y1) (x2,y2) coordinates corresponding to the boundaries of the object
-    def findBoundaries(self,image):
-        h,w, ch = image.shape
-        x1,y1 = h,w
-        for i in np.arange(h, 0, -1):
-            print(image[0][i])
-            for j in np.arange(w,0, -1):
-                if j < x1 and i < y1 and image[j,i].all() != np.array([0,0,0]).all():
-                    x1,y1, = j,i
-        print(x1,y1)
-
-        #First idea:
-        #find the minimum x and y val that aren't black
-        #find the maximum x and y val that aren't black
-        #use those as coords
-        #Downsides:
-        #doesn't take into account connectedness of pixels that correspond to an object
-        #so 1 stray pixel screws up the box boundaries significantly
-        #Somehow, I need to capture the idea of a region, regression?
-
-        #Second Idea:
-        #Just use an opencv function lole cv2.contour seems to be a good choice.
-        pass
+    
+    def findBiggestContour(self, contours):
+        maxArea = 0
+        maxIndex = 0
+        i = 0
+        while i < len(contours):
+            tmpArea = cv2.contourArea(contours[i])
+            if tmpArea > maxArea:
+                maxArea = tmpArea
+                maxIndex = i
+            i += 1
+        return contours[maxIndex]
+    #Start with Frame
+    #Convert to HSV
+    #Thresh image with inRange()
+    # Find Contours
+    # Find contour with biggest area
+    # Find bounding rectangle dimensions of contour
+    # draw rectangle
+    # convert and export image    
 
 #TODO: Add more documentation
 class Window(QMainWindow):
