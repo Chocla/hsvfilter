@@ -22,23 +22,51 @@ class vidThread(QThread):
         print("Range:", self.lBound,self.rBound)
 
     def run(self):
+        flag = True
         cap = cv2.VideoCapture(0)
         while True:
             ret,frame = cap.read()
             hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
             if ret:
                 mask = cv2.inRange(hsv, self.lBound, self.rBound)
+                contours, h = cv2.findContours(mask, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                 
                 res = cv2.bitwise_and(frame,frame,mask=mask)
+                if len(contours) != 0:
+                    maxContour = self.findBiggestContour(contours)
+                    rx,ry,rw,rh = cv2.boundingRect(maxContour)
+                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(255,0,0))
+
+                #cv2.rectangle(res, (50,50),(100,100), (255,0,0), 2)
                 h, w, ch = res.shape
                 bytesPerLine = ch * w
 
-                convertedToRGB = cv2.cvtColor(res,cv2.COLOR_BGR2RGB)
+                convertedToRGB = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
                 converted = QImage(convertedToRGB.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
                 
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
+    
+    def findBiggestContour(self, contours):
+        maxArea = 0
+        maxIndex = 0
+        i = 0
+        while i < len(contours):
+            tmpArea = cv2.contourArea(contours[i])
+            if tmpArea > maxArea:
+                maxArea = tmpArea
+                maxIndex = i
+            i += 1
+        return contours[maxIndex]
+    #Start with Frame
+    #Convert to HSV
+    #Thresh image with inRange()
+    # Find Contours
+    # Find contour with biggest area
+    # Find bounding rectangle dimensions of contour
+    # draw rectangle
+    # convert and export image    
 
 #TODO: Add more documentation
 class Window(QMainWindow):
