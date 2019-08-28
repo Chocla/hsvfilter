@@ -35,8 +35,8 @@ class vidThread(QThread):
                 if len(contours) != 0:
                     maxContour = self.findBiggestContour(contours)
                     rx,ry,rw,rh = cv2.boundingRect(maxContour)
-                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(255,0,0))
-
+                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(0,0,255))
+                self.calculateDirection(rx,ry,rw,rh,frame.shape)
                 #cv2.rectangle(res, (50,50),(100,100), (255,0,0), 2)
                 h, w, ch = res.shape
                 bytesPerLine = ch * w
@@ -47,7 +47,20 @@ class vidThread(QThread):
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
-    
+    #calculates the direction the camera needs to move in order to center the detected object
+    def calculateDirection(self,x,y,h,w,shape):
+        vec = (x + (w/2) - shape[0]/2, y + (h/2) - shape[1]/2)
+        try:
+            theta = np.arctan(vec[1]/vec[0])*(180/np.pi)
+            if vec[0] < 0:
+                theta += 180    
+        except ZeroDivisionError:
+            theta = 90 if vec[1] > 0 else 270
+                
+        print(int( (theta - 22.5) / 45))
+        #if length of vector is short enough, don't display an arrow
+        #else 
+        pass
     def findBiggestContour(self, contours):
         maxArea = 0
         maxIndex = 0
