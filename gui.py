@@ -19,12 +19,14 @@ class vidThread(QThread):
     # (a,b)           (c,b)
     #   |               |
     # (a,c) - (b,c) - (c,c) 
-    a,b,c = 40,65,90
+    a,b,c = 40,55,70
+    #Order:
+    #Up Left, Up, Up Right, Right, Down Right, Down, Down Left, Right
     arrowStart = np.array([
-        (a,c), (b,c), (c,c), (c,b), (c,a),(b,a), (a,a,), (a,b)
+        (c,c), (b,c), (a,c), (a,b), (a,a), (b,a), (c,a), (c,b)
     ])
     arrowEnd = np.array([
-        (c,a),(b,a), (a,a,), (a,b),(a,c), (b,c), (c,c), (c,b)
+        (a,a), (b,a), (c,a), (c,b), (c,c), (b,c), (a,c), (a,b)
     ])
 
     @pyqtSlot(int)
@@ -44,7 +46,6 @@ class vidThread(QThread):
                 #Finds contours of all regions
                 contours, h = cv2.findContours(mask, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                 
-                # res = cv2.bitwise_and(frame,frame,mask=mask)
                 if len(contours) != 0:
                     #Gets the biggest contour and draws a bounding rectangle for it
                     maxContour = self.findBiggestContour(contours)
@@ -54,14 +55,14 @@ class vidThread(QThread):
                 cv2.arrowedLine(frame, tuple(self.arrowStart[region]),tuple(self.arrowEnd[region]), (255,0,0),4)
 
                 #Converting to Qt Image for displaying
-                h, w, ch = res.shape
+                h, w, ch = frame.shape
                 bytesPerLine = ch * w
                 convertedToRGB = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
                 converted = QImage(convertedToRGB.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
-    
+    #Calculates which region the center of the boundary box is in
     def calculateDirection(self,x,y,h,w,shape):
         vec = (x + (w/2) - (shape[1]/2), -(y + (h/2)) +(shape[0]/2))
       
@@ -69,7 +70,6 @@ class vidThread(QThread):
         if theta < 0:
             theta += 360
         region = int( ((theta - 22.5) % 360) / 45 )
-        print("Region: ",region)
         
         return region
     def findBiggestContour(self, contours):

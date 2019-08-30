@@ -1,3 +1,5 @@
+#Source: https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt5
+#Original: https://github.com/rsgalloway/qrangeslider
 import sys, os
 from PyQt5 import QtCore, QtGui, QtWidgets
 
