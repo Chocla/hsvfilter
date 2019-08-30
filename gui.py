@@ -7,14 +7,28 @@ import numpy as np
 import cv2
 import json
 
-#TODO: Add color filter object detection
-#TODO: Draw a box around detected object
 class vidThread(QThread):
     changePixmap = QtCore.pyqtSignal(QImage)
 
     lBound = np.array([0,0,0])
     rBound = np.array([255,255,255])
-    
+
+    #Pixel Coordinates for drawing direction arrow
+    # (a,a) - (b,a) - (c,a)
+    #   |               |
+    # (a,b)           (c,b)
+    #   |               |
+    # (a,c) - (b,c) - (c,c) 
+    a,b,c = 40,55,70
+    #Order:
+    #Up Left, Up, Up Right, Right, Down Right, Down, Down Left, Right
+    arrowStart = np.array([
+        (c,c), (b,c), (a,c), (a,b), (a,a), (b,a), (c,a), (c,b)
+    ])
+    arrowEnd = np.array([
+        (a,a), (b,a), (c,a), (c,b), (c,c), (b,c), (a,c), (a,b)
+    ])
+
     @pyqtSlot(int)
     def updateRange(self,n):
         sliderID = self.sender().ID
@@ -29,25 +43,35 @@ class vidThread(QThread):
             hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
             if ret:
                 mask = cv2.inRange(hsv, self.lBound, self.rBound)
+                #Finds contours of all regions
                 contours, h = cv2.findContours(mask, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                 
-                res = cv2.bitwise_and(frame,frame,mask=mask)
                 if len(contours) != 0:
+                    #Gets the biggest contour and draws a bounding rectangle for it
                     maxContour = self.findBiggestContour(contours)
                     rx,ry,rw,rh = cv2.boundingRect(maxContour)
-                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(255,0,0))
+                    cv2.rectangle(frame,(rx,ry), (rx+rw,ry+rh),(0,0,255))
+                region = self.calculateDirection(rx,ry,rw,rh,frame.shape)
+                cv2.arrowedLine(frame, tuple(self.arrowStart[region]),tuple(self.arrowEnd[region]), (255,0,0),4)
 
-                #cv2.rectangle(res, (50,50),(100,100), (255,0,0), 2)
-                h, w, ch = res.shape
+                #Converting to Qt Image for displaying
+                h, w, ch = frame.shape
                 bytesPerLine = ch * w
-
                 convertedToRGB = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
                 converted = QImage(convertedToRGB.data, w,h,bytesPerLine,QtGui.QImage.Format_RGB888)
-                
                 final =  converted.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
 
                 self.changePixmap.emit(final)
-    
+    #Calculates which region the center of the boundary box is in
+    def calculateDirection(self,x,y,h,w,shape):
+        vec = (x + (w/2) - (shape[1]/2), -(y + (h/2)) +(shape[0]/2))
+      
+        theta = np.arctan2([vec[1]],[vec[0]])[0]*(180/np.pi)
+        if theta < 0:
+            theta += 360
+        region = int( ((theta - 22.5) % 360) / 45 )
+        
+        return region
     def findBiggestContour(self, contours):
         maxArea = 0
         maxIndex = 0
@@ -59,14 +83,6 @@ class vidThread(QThread):
                 maxIndex = i
             i += 1
         return contours[maxIndex]
-    #Start with Frame
-    #Convert to HSV
-    #Thresh image with inRange()
-    # Find Contours
-    # Find contour with biggest area
-    # Find bounding rectangle dimensions of contour
-    # draw rectangle
-    # convert and export image    
 
 #TODO: Add more documentation
 class Window(QMainWindow):
